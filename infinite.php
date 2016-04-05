@@ -41,7 +41,15 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 
 	global $wp_query;
 
-	$post_type = ( isset( $wp_query->queried_object->post_type ) ? $wp_query->queried_object->post_type : 'post' );
+	$post_type									= ( isset( $wp_query->queried_object->post_type ) ? $wp_query->queried_object->post_type : 'post' );
+	$options_css_classes				= get_option('infinite_css_classes');
+	$optoins_bootstrap_classes = null;
+
+	if ( get_option('infinite_bootstrap_classes') ) {
+		$optoins_bootstrap_classes = 'btn btn-default';
+	}
+
+	$additional_classes = "$options_css_classes $optoins_bootstrap_classes";
 
 	// Get posts not in the same Tax Term, not excluding any and either previous or !previous (next)
 	$prev_post  = get_adjacent_post( false, '', true );
@@ -52,7 +60,7 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 	// If have previous posts construct
 	if ( ! empty( $prev_post ) ) {
 		$link_text = ( $previous_button_text ? $previous_button_text : $prev_post->post_title );
-		$nav_output .= "<a class='post-link previous-link' href='{$prev_post->guid}'>{$link_text}</a>";
+		$nav_output .= "<a class='edev-post-link edev-previous-link $additional_classes' href='{$prev_post->guid}'>{$link_text}</a>";
 	}
 	// If no more previous posts i.e. If at start of all posts, query for 1 and last post
 	else{
@@ -64,7 +72,7 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 
 		$single_post = new WP_Query( $args ); $single_post->the_post();
 		$link_text   = ( $previous_button_text ? $previous_button_text : get_the_title() );
-		$nav_output .= '<a class="post-link previous-link" href="' . get_permalink() . '">' . $link_text .'</a>';
+		$nav_output .= '<a class="edev-post-link edev-previous-link ' . $additional_classes . '" href="' . get_permalink() . '">' . $link_text .'</a>';
 		wp_reset_query();
 
 	}
@@ -75,7 +83,7 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 	// If have next posts construct
 	if ( ! empty( $next_post ) ) {
 		$link_text = ( $next_button_text ? $next_button_text : $next_post->post_title );
-		$nav_output .= "<a class='post-link next-link icon-right-side-padding' href='{$next_post->guid}'>{$link_text}</a>";
+		$nav_output .= "<a class='post-link next-link icon-right-side-padding {$additional_classes}' href='{$next_post->guid}'>{$link_text}</a>";
 	}
 	// If no more next posts i.e. If at end of all posts, query for 1 and first post
 	else{
@@ -86,7 +94,7 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 		);
 		$single_post = new WP_Query( $args ); $single_post->the_post();
 		$link_text   = ( $next_button_text ?  $next_button_text : get_the_title() );
-		$nav_output .= '<a class="post-link next-link icon-right-side-padding" href="' . get_permalink() . '">' . $link_text . '</a>';
+		$nav_output .= '<a class="post-link next-link icon-right-side-padding' . $additional_classes . '" href="' . get_permalink() . '">' . $link_text . '</a>';
 		wp_reset_query();
 	}
 
@@ -100,3 +108,34 @@ function edev_insert_after_content( $content ) {
 	$content .= edev_get_infinite_adjacent_navigation();
 	return $content;
 }
+
+function edev_settings_page() {
+?>
+    <div class="wrap">
+        <h2>Global Custom Options</h2>
+        <form method="post" action="options.php">
+            <?php wp_nonce_field('update-options') ?>
+						<div>
+	            <p>CSS Classes:<br />
+                <input type="text" name="infinite_css_classes" size="45" value="<?php echo get_option('infinite_css_classes'); ?>" />
+		          </p>
+						</div>
+						<div>
+							<p>Add BootStrap support?:<br />
+								<input type="checkbox" name="infinite_bootstrap_classes" value="1" />
+							</p>
+						</div>
+            <p><input type="submit" name="Submit" value="Save Options" /></p>
+            <input type="hidden" name="action" value="update" />
+            <input type="hidden" name="page_options" value="infinite_css_classes" />
+						<input type="hidden" name="page_options" value="infinite_bootstrap_classes" />
+        </form>
+    </div>
+<?php
+}
+
+function edev_add_theme_menu_item() {
+	add_options_page("Infinite Panel", "Infinite Panel", "manage_options", "theme-panel", "edev_settings_page", null, 99);
+}
+
+add_action("admin_menu", "edev_add_theme_menu_item");
