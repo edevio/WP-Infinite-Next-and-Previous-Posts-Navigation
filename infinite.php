@@ -57,6 +57,8 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 
 	$nav_output = NULL;
 
+	$nav_output .= '<div class="edev-navigation">';
+
 	// If have previous posts construct
 	if ( ! empty( $prev_post ) ) {
 		$link_text = ( $previous_button_text ? $previous_button_text : $prev_post->post_title );
@@ -83,7 +85,7 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 	// If have next posts construct
 	if ( ! empty( $next_post ) ) {
 		$link_text = ( $next_button_text ? $next_button_text : $next_post->post_title );
-		$nav_output .= "<a class='post-link next-link icon-right-side-padding {$additional_classes}' href='{$next_post->guid}'>{$link_text}</a>";
+		$nav_output .= "<a class='edev-post-link edev-next-link icon-right-side-padding {$additional_classes}' href='{$next_post->guid}'>{$link_text}</a>";
 	}
 	// If no more next posts i.e. If at end of all posts, query for 1 and first post
 	else{
@@ -94,9 +96,11 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 		);
 		$single_post = new WP_Query( $args ); $single_post->the_post();
 		$link_text   = ( $next_button_text ?  $next_button_text : get_the_title() );
-		$nav_output .= '<a class="post-link next-link icon-right-side-padding' . $additional_classes . '" href="' . get_permalink() . '">' . $link_text . '</a>';
+		$nav_output .= '<a class="edev-post-link edev-next-link icon-right-side-padding' . $additional_classes . '" href="' . get_permalink() . '">' . $link_text . '</a>';
 		wp_reset_query();
 	}
+
+	$nav_output .= '</div>';
 
 	return $nav_output;
 
@@ -105,7 +109,9 @@ function edev_get_infinite_adjacent_navigation( $insert_element = '', $previous_
 add_filter ('the_content', 'edev_insert_after_content');
 
 function edev_insert_after_content( $content ) {
-	$content .= edev_get_infinite_adjacent_navigation();
+	if ( "1" === get_option( 'infinite_automaically_output' ) ) {
+		$content .= edev_get_infinite_adjacent_navigation();
+	}
 	return $content;
 }
 
@@ -116,18 +122,26 @@ function edev_settings_page() {
         <form method="post" action="options.php">
             <?php wp_nonce_field('update-options') ?>
 						<div>
+							<p>Automatically Place:<br />
+								<input type="checkbox" name="infinite_automaically_output" value="1" <?php echo "1" === get_option( 'infinite_automaically_output' ) ? 'checked="checked"': '';?> />
+							</p>
+							<p>Automatically Position Left and Right:<br />
+								<input type="checkbox" name="infinite_place_left_right" value="1" <?php echo "1" === get_option( 'infinite_place_left_right' ) ? 'checked="checked"': '';?> />
+							</p>
 	            <p>CSS Classes:<br />
-                <input type="text" name="infinite_css_classes" size="45" value="<?php echo get_option('infinite_css_classes'); ?>" />
+                <input type="text" name="infinite_automatic_output" size="45" value="<?php echo get_option('infinite_css_classes'); ?>" />
 		          </p>
 						</div>
 						<div>
-							<p>Add BootStrap support?:<br />
-								<input type="checkbox" name="infinite_bootstrap_classes" value="1" />
+							<p>Add BootStrap support:<br />
+								<input type="checkbox" name="infinite_bootstrap_classes" value="1" <?php echo "1" === get_option( 'infinite_bootstrap_classes' ) ? 'checked="checked"': '';?> />
 							</p>
 						</div>
             <p><input type="submit" name="Submit" value="Save Options" /></p>
             <input type="hidden" name="action" value="update" />
-            <input type="hidden" name="page_options" value="infinite_css_classes" />
+						<input type="hidden" name="page_options" value="infinite_automaically_output" />
+            <input type="hidden" name="page_options" value="infinite_place_left_right" />
+						<input type="hidden" name="page_options" value="infinite_css_classes" />
 						<input type="hidden" name="page_options" value="infinite_bootstrap_classes" />
         </form>
     </div>
@@ -139,3 +153,16 @@ function edev_add_theme_menu_item() {
 }
 
 add_action("admin_menu", "edev_add_theme_menu_item");
+
+add_action('wp_head','edev_add_css');
+
+function edev_add_css() {
+
+			$output='<style>.edev-navigation:before, .edev-navigation:after { content: " "; display: table; } .edev-navigation:after { clear: both; } .edev-navigation { *zoom: 1; } .edev-previous-link { float:left } .edev-next-link { float:right } </style>';
+
+
+
+
+	echo $output;
+
+}
